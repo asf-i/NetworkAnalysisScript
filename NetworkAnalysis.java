@@ -2,19 +2,26 @@ import java.util.Arrays;
 import java.util.Collections;
 
 public class NetworkAnalysis {
+	public static int n = 0;
+	public static int m = 0;
 
 	public static void main(String[] args) {
 		final String LIST = "-> ";
-		Integer[] sequences = {2, 5, 3, 2, 7, 2, 4, 3};
-		//Integer[] sequences = {2,3,2,7,4,5,3,2,4,2}; // INSERT THE DEGREES 
+		Integer[] sequences = {2, 5, 3, 2, 7, 2, 4, 3}; // INSERT DEGREES HERE
+		if (args.length > 0) {
+			sequences = new Integer[args.length];
+			for (int i = 0; i < args.length; i++) {
+				sequences[i] = Integer.parseInt(args[i]);
+			}
+		}
 		
 		int[] torus = {0,1,0}; // INSERT SMALL-WORLD (n,1,r) , if you dont care please insert {0,0,0}
 		
 		
 		Arrays.sort(sequences, Collections.reverseOrder());
 		System.out.println("Your sequence: " + Arrays.toString(sequences) + "");
-		int n = sequences.length;
-		int m = 0;
+		n = sequences.length;
+		m = 0;
 		for (int i = 0; i < n; i++) {
 			m += sequences[i];
 		}
@@ -25,38 +32,41 @@ public class NetworkAnalysis {
 		
 		
 		// check if sequence is graphic
-		if (isGraphicSequence(Arrays.copyOf(sequences, sequences.length)))
-			System.out.println(LIST + "Sequence is graphic ✅");
-		else
+		if (!isGraphicSequence(Arrays.copyOf(sequences, sequences.length))) {
 			System.out.println(LIST + "Sequence is NOT graphic ❌");
+			return; // Sequence stellt keinen Graph dar, macht keinen Sinn weiter zu machen
+		} else
+			System.out.println(LIST + "Sequence is graphic ✅");
 		System.out.println();
 
 		
 		// durfee number / h-index
-		System.out.println(LIST + "Durfee number = h-index = " + durfee(Arrays.copyOf(sequences, sequences.length)));
+		System.out.println(LIST + "Durfee number/h-index:\th = " + durfee(Arrays.copyOf(sequences, sequences.length)));
 		System.out.println();
 
 		
-		System.out.println("check if erdosGallai holds for k");
+		System.out.println(LIST + "Check if erdosGallai holds for k = 1, 2, ..., n = " + n);
 		erdosGallai(sequences);
 		System.out.println();
 
-		System.out.println("check if Graph is a splitGraph...");
+
+		// check if graph is splitgraph
 		if(splitGraph(Arrays.copyOf(sequences, sequences.length), durfee(Arrays.copyOf(sequences, sequences.length))))
-			System.out.println("splittable ✅");
+			System.out.println(LIST + "Graph is a split Graph ✅");
 		else
-			System.out.println("NOT splittable ❌");
+			System.out.println(LIST + "Graph is NOT a split Graph ❌");
+		System.out.println();
+		
+		System.out.println(LIST + "Splittance number: " + (splittanceNumber(Arrays.copyOf(sequences, sequences.length), durfee(Arrays.copyOf(sequences, sequences.length)))));
 		System.out.println();
 		
 		
-		System.out.println("The splittance number: " + (splittanceNumber(Arrays.copyOf(sequences, sequences.length), durfee(Arrays.copyOf(sequences, sequences.length)))));
-		System.out.println();
-		
-		System.out.println("check yourself if graph is threshold graph: first h inequalities have to be equal, the next have to be <=");
+		System.out.println(LIST + "check yourself if graph is threshold graph: first h inequalities have to be equal, the next have to be <=");
 	
-		System.out.println();
-		System.out.println("=== MORE THINGS ===");
-		System.out.println();
+
+
+
+		System.out.println("\n=== MORE THINGS ===\n");
 		
 		System.out.print("<deg> = " + (2 * m / n) + "\n");
 		
@@ -146,27 +156,11 @@ public class NetworkAnalysis {
 
 
 	public static void erdosGallai(Integer[] sequence) {
+		// sequence IS ASSUMED TO BE GRAPHIC AND SORTED IN DESCENDING ORDER
 
 		int[] d = new int[sequence.length];
 		for (int i = 0; i < sequence.length; i++) {
 			d[i] = sequence[i];
-		}
-
-		int n = d.length;
-
-		// Sort the sequence in non-increasing order
-		Arrays.sort(d);
-		for (int i = 0; i < n / 2; i++) {
-			int temp = d[i];
-			d[i] = d[n - i - 1];
-			d[n - i - 1] = temp;
-		}
-
-		// Check if the sum is even
-		int sum = Arrays.stream(d).sum();
-		if (sum % 2 != 0) {
-			System.out.println("-> The sequence does not have an even sum => CANNOT BE GRAPHIC");
-			System.out.println();
 		}
 
 		// Check the prefix sum condition for all k from 1 to n-1
@@ -180,15 +174,15 @@ public class NetworkAnalysis {
 			for (int j = k; j < n; j++) {
 				rightSum += Math.min(k, d[j]);
 			}
-			
-			System.out.print(leftSum + " ? " + rightSum + "  <=>  ");
 
+			System.out.print("\tk = " + k + ":\t");
 			if (leftSum > rightSum) {
 				System.out.println("The sequence is not graphic at k = " + k + " ❌");
 			} else {
-				System.out.print("holds for k = " + k + " ✅");
 				if(leftSum == rightSum) {
-					System.out.print(" -> EVEN WITH EQUALITY!");
+					System.out.print(leftSum + " == " + rightSum + " ✅ (equality)");
+				} else {
+					System.out.print(leftSum + " <= " + rightSum + " ✅");
 				}
 				System.out.println();
 			}
