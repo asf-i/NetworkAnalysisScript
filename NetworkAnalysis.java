@@ -2,11 +2,12 @@ import java.util.Arrays;
 import java.util.Collections;
 
 public class NetworkAnalysis {
-	public static int n = 0;
-	public static int m = 0;
+	private static int n = 0;
+	private static int m = 0;
+	private static int h;
+	private final static String LIST = "-> ";
 
 	public static void main(String[] args) {
-		final String LIST = "-> ";
 		Integer[] sequences = {2, 5, 3, 2, 7, 2, 4, 3}; // INSERT DEGREES HERE
 		if (args.length > 0) {
 			sequences = new Integer[args.length];
@@ -41,12 +42,14 @@ public class NetworkAnalysis {
 
 		
 		// durfee number / h-index
-		System.out.println(LIST + "Durfee number/h-index:\th = " + durfee(Arrays.copyOf(sequences, sequences.length)));
+		h = durfee(Arrays.copyOf(sequences, sequences.length));
+		System.out.println(LIST + "Durfee number/h-index:\th = " + h);
 		System.out.println();
 
 		
 		System.out.println(LIST + "Check if erdosGallai holds for k = 1, 2, ..., n = " + n);
 		erdosGallai(sequences);
+		System.out.println("(check yourself if graph is threshold graph: first h inequalities have to be equal, the next have to be <=)");
 		System.out.println();
 
 
@@ -61,25 +64,27 @@ public class NetworkAnalysis {
 		System.out.println();
 		
 		
-		System.out.println(LIST + "check yourself if graph is threshold graph: first h inequalities have to be equal, the next have to be <=");
 	
+		// Random Graph Model density
+		double degMedian = (2 * m / (double)n);
+		System.out.println(LIST + "(Random Graph Model) Density of Graph: " + degMedian / (n - 1));
+
 
 
 
 		System.out.println("\n=== MORE THINGS ===\n");
 		
-		System.out.print("<deg> = " + (2 * m / n) + "\n");
+		System.out.print("<deg> = " + degMedian + "\n");
 		
 		if(torus[2] <= (torus[0]-1)/(4)) {
 			System.out.println("Torus Lemma can be used :)");
-			System.out.println("=>");
 			
-			System.out.println("check condition <deg> = 2r: " + (2 * m / n) + " =? " + 2*torus[2]);
-			System.out.println("check condition <cc> = (3r-3)/(4r-2): " + "'by hand'" + " =? " + (3*torus[2]-3)/(4*torus[2]-2));
+			System.out.println("\t=> check condition <deg> = 2r: " + (2 * m / n) + " =? " + 2*torus[2]);
+			System.out.println("\t=> check condition <cc> = (3r-3)/(4r-2): " + "'by hand'" + " =? " + (3*torus[2]-3)/(4*torus[2]-2));
 			
 			
 		}else{
-			System.out.println("Torous Lemma CANNOT be used :(");
+			System.out.println("Torus Lemma CANNOT be used :(");
 		}
 	
 	}
@@ -155,14 +160,16 @@ public class NetworkAnalysis {
 	}
 
 
-	public static void erdosGallai(Integer[] sequence) {
+	private static void erdosGallai(Integer[] sequence) {
 		// sequence IS ASSUMED TO BE GRAPHIC AND SORTED IN DESCENDING ORDER
+		// for correct threshold graph calculation, this function has to be called after the global h has been set correctly
 
 		int[] d = new int[sequence.length];
 		for (int i = 0; i < sequence.length; i++) {
 			d[i] = sequence[i];
 		}
 
+		boolean thresholdGraph = true;
 		// Check the prefix sum condition for all k from 1 to n-1
 		for (int k = 1; k <= n; k++) {
 			int leftSum = 0;
@@ -178,23 +185,26 @@ public class NetworkAnalysis {
 			System.out.print("\tk = " + k + ":\t");
 			if (leftSum > rightSum) {
 				System.out.println("The sequence is not graphic at k = " + k + " ❌");
+				thresholdGraph = false;
 			} else {
 				if(leftSum == rightSum) {
 					System.out.print(leftSum + " == " + rightSum + " ✅ (equality)");
+					if (k > h) thresholdGraph = false;
 				} else {
 					System.out.print(leftSum + " <= " + rightSum + " ✅");
+					if (k <= h) thresholdGraph = false;
 				}
 				System.out.println();
 			}
 		}
+		if (thresholdGraph) System.out.println("\n" + LIST + "Graph is a threshold graph ✅");
+		else System.out.println("\n" + LIST + "Graph is NOT a threshold graph ❌");
 	}
 
-	public static boolean isGraphicSequence(Integer[] sequence) {
+	private static boolean isGraphicSequence(Integer[] sequence) {
+		// sequence IS ASSUMED TO BE SORTED IN DESCENDING ORDER
 		// Havel Hakimi: https://www.geogebra.org/m/ekajwspy
 		
-		// Sort the sequence in non-increasing order
-		Arrays.sort(sequence, Collections.reverseOrder());
-
 		// Continue the algorithm until all degrees are processed
 		while (true) {
 			// Remove the largest degree (first element after sorting)
